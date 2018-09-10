@@ -1,4 +1,5 @@
 from PIL.ImageFile import ImageFile
+import pydicom
 from .dataloader import DataLoader
 from .transforms import *
 
@@ -265,12 +266,37 @@ def open_image(fn):
         except Exception as e:
             raise OSError('Error handling image at: {}'.format(fn)) from e
 
+
+def open_dicom(fn):
+    """ Opens an DICOM image using pydicom given the file path.
+
+    Arguments:
+        fn: the file path of the image
+
+    Returns:
+        The DICOM image as numpy array of floats normalized to range between 0.0 - 1.0
+    """
+    try:
+        ds = pydicom.dcmread(fn)
+        img = ds.pixel_array.astype(np.float32) / 255
+        return img
+    except Exception as e:
+        raise OSError('Error handling image at: {}'.format(fn)) from e
+
+
 class FilesDataset(BaseDataset):
     def __init__(self, fnames, transform, path):
         self.path,self.fnames = path,fnames
         super().__init__(transform)
     def get_sz(self): return self.transform.sz
-    def get_x(self, i): return open_image(os.path.join(self.path, self.fnames[i]))
+    def get_x(self, i): 
+        path = os.path.join(self.path, self.fnames[i])
+        _, extension = os.path.splitext(path)
+
+        if extension == 'dcm':
+            return open_dicom(path)
+        else:
+            return open_image(path)
     def get_n(self): return len(self.fnames)
 
     def resize_imgs(self, targ, new_path, resume=True, fn=None):
