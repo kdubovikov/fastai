@@ -292,10 +292,8 @@ class FilesDataset(BaseDataset):
     def get_x(self, i): 
         path = os.path.join(self.path, self.fnames[i])
         _, extension = os.path.splitext(path)
-        print(path)
-        print(extension)
 
-        if extension == '.dcm':
+        if extension == 'dcm':
             return open_dicom(path)
         else:
             return open_image(path)
